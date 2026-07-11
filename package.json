@@ -1,8 +1,18 @@
 {
   "name": "pinup",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "private": true,
   "description": "Pin files and folders in the Obsidian File Explorer.",
   "main": "main.js",
+  "author": "pilafdob",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pilafdob/Pinup.git"
+  },
+  "homepage": "https://github.com/pilafdob/Pinup#readme",
+  "bugs": {
+    "url": "https://github.com/pilafdob/Pinup/issues"
+  },
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",

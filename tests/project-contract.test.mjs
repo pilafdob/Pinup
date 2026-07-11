@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const [main, explorer, icons, styles, manifest] = await Promise.all([
+const [main, explorer, shelf, icons, styles, manifest] = await Promise.all([
   readFile("src/main.ts", "utf8"),
   readFile("src/file-explorer.ts", "utf8"),
+  readFile("src/pin-up-shelf.ts", "utf8"),
   readFile("src/icons.ts", "utf8"),
   readFile("styles.css", "utf8"),
   readFile("manifest.json", "utf8").then(JSON.parse)
@@ -55,9 +56,11 @@ test("refreshes rows restored after startup while ignoring Pinup's own DOM", () 
 });
 
 test("orders pinned rows without moving native File Explorer nodes", () => {
+  assert.match(explorer, /\.nav-files-container > div/);
   assert.match(styles, /\.pinup-order-container\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;/s);
   assert.match(explorer, /wrapper\.style\.order = String\(index - pinned\.length\)/);
   assert.doesNotMatch(explorer, /container\.(?:appendChild|insertBefore)\(/);
+  assert.match(explorer, /pin\.mode === "normal"/);
 });
 
 test("uses modifier-click for pin-up and plain-click to remove an existing pin-up", () => {
@@ -66,10 +69,31 @@ test("uses modifier-click for pin-up and plain-click to remove an existing pin-u
   assert.match(main, /this\.settings\.pins\[path\]\?\.mode === "pin-up"[\s\S]*this\.unpin\(path\)/);
 });
 
+test("creates inline controls only for saved pins and never on mobile", () => {
+  assert.match(explorer, /Platform\.isMobile/);
+  assert.match(explorer, /body\.hasClass\("is-mobile"\)/);
+  assert.match(explorer, /\|\| !pin\)/);
+  assert.match(explorer, /target\.blur\(\)/);
+  assert.match(explorer, /is-pinup-active/);
+  assert.doesNotMatch(explorer, /toggleClass\("is-active"/);
+  assert.doesNotMatch(styles, /\.pinup-row:hover > \.pinup-inline-button/);
+  assert.doesNotMatch(styles, /\.pinup-inline-button\.is-active/);
+});
+
+test("offers shelf removal through a context menu", () => {
+  assert.match(shelf, /addEventListener\("contextmenu"/);
+  assert.match(shelf, /setTitle\("Remove from pin-up"\)/);
+  assert.match(shelf, /this\.removePinUp\(file\.path\)/);
+});
+
+test("adds mobile shelf breathing room", () => {
+  assert.match(styles, /\.is-mobile \.pinup-shelf\s*\{\s*margin-block-start:\s*12px;/);
+});
+
 test("renders pin-up indicators with a visibly heavier pin stroke", () => {
   assert.match(styles, /\.pinup-shelf-item-icon svg,\s*\.pinup-inline-button\.is-pin-up > svg/);
   assert.match(styles, /stroke-width:\s*2\.75px/);
-  assert.match(styles, /\.pinup-row \.pinup-inline-button\.is-active > svg\s*\{\s*opacity:\s*1 !important;/);
+  assert.match(styles, /\.pinup-row \.pinup-inline-button > svg\s*\{\s*opacity:\s*1 !important;/);
   assert.equal((styles.match(/opacity:\s*1;/g) ?? []).length >= 2, true);
 });
 

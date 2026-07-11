@@ -1,6 +1,6 @@
 # Pinup release checklist
 
-This repository is prepared for an Obsidian Community Plugin release, but no public release or submission has been made.
+This checklist records the release and Community Plugin readiness gates for Pinup 1.0.0.
 
 ## Before making the repository public
 
@@ -10,16 +10,18 @@ This repository is prepared for an Obsidian Community Plugin release, but no pub
 - Manually test the built plugin in a disposable vault on the supported desktop and mobile targets.
 - Confirm that the File Explorer DOM behavior still works on the target Obsidian version; it is intentionally isolated because it depends on unstable UI structure.
 
-## Publish version 0.1.0
+## Publish version 1.0.0
 
 1. Make the GitHub repository public only after the public-surface review passes.
-2. Create a non-draft GitHub Release with the exact tag `0.1.0`.
+2. Create a non-draft GitHub Release with the exact tag `1.0.0`.
 3. Attach the production-built `main.js`, `manifest.json`, and `styles.css` files as release assets. Do not commit `main.js`.
 4. Verify that the release is published and that its tag exactly matches `manifest.json`.
 5. Submit the public repository URL at https://community.obsidian.md and address any automated review feedback with a new patch release.
 
 ## Verified locally on 2026-07-11
 
-- `npm test`: 14 passing tests.
+- `npm test`: 19 passing tests.
 - `npm run build`: TypeScript check and production bundle completed.
-- `manifest.json`, `package.json`, and `versions.json` agree on version `0.1.0` and minimum app version `1.4.16`.
+- `manifest.json`, `package.json`, and `versions.json` agree on version `1.0.0` and minimum app version `1.4.16`.
+- The tracked repository and built runtime were scanned for local paths, credentials, tokens, private keys, and source maps.
+- The release assets are `main.js`, `manifest.json`, and `styles.css`; `main.js` remains excluded from source control.

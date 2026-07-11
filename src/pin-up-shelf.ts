@@ -1,4 +1,4 @@
-import { TFile, TFolder, type App, type TAbstractFile } from "obsidian";
+import { Menu, TFile, TFolder, type App, type TAbstractFile } from "obsidian";
 import { ensurePushPinIcon, pushPinIconContext } from "./icons";
 import { orderedPins, type PinMap } from "./pin-state";
 
@@ -10,7 +10,10 @@ export class PinUpShelf {
   private shelfEl: HTMLElement | null = null;
   private renderSignature = "";
 
-  constructor(private readonly app: App) {}
+  constructor(
+    private readonly app: App,
+    private readonly removePinUp: (path: string) => void
+  ) {}
 
   render(viewEl: HTMLElement, pins: PinMap, enabled: boolean): void {
     const tree = viewEl.querySelector<HTMLElement>(".nav-files-container");
@@ -61,6 +64,16 @@ export class PinUpShelf {
       ensurePushPinIcon(this.app, icon);
       item.createSpan({ cls: "pinup-shelf-item-title", text: file.name });
       item.addEventListener("click", () => void this.activate(file, viewEl));
+      item.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const menu = new Menu();
+        menu.addItem((menuItem) => menuItem
+          .setTitle("Remove from pin-up")
+          .setIcon("pin-off")
+          .onClick(() => this.removePinUp(file.path)));
+        menu.showAtMouseEvent(event);
+      });
     }
     this.renderSignature = signature;
   }

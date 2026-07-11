@@ -1,4 +1,4 @@
-import type { App } from "obsidian";
+import { Platform, type App } from "obsidian";
 import { ensurePushPinIcon } from "./icons";
 import type { PinupSettings } from "./settings";
 import { comparePins, type PinState } from "./pin-state";
@@ -12,7 +12,7 @@ interface ViewState {
 
 const ROW_SELECTOR = ".nav-file-title[data-path], .nav-folder-title[data-path]";
 const DIRECT_ROW_SELECTOR = ":scope > .nav-file-title[data-path], :scope > .nav-folder-title[data-path]";
-const CONTAINER_SELECTOR = ".nav-files-container, .nav-folder-children";
+const CONTAINER_SELECTOR = ".nav-files-container, .nav-files-container > div, .nav-folder-children";
 function mutationChangesExplorerStructure(records: MutationRecord[]): boolean {
   for (const record of records) {
     const target = record.target instanceof Element ? record.target : null;
@@ -61,7 +61,8 @@ export class FileExplorerAdapter {
   constructor(
     private readonly app: App,
     private readonly getSettings: () => PinupSettings,
-    private readonly activatePin: (path: string, requestPinUp: boolean) => void
+    private readonly activatePin: (path: string, requestPinUp: boolean) => void,
+    private readonly removePinUp: (path: string) => void
   ) {}
 
   refreshAll(): void {
@@ -91,7 +92,7 @@ export class FileExplorerAdapter {
         observer: new MutationObserver((records) => {
           if (mutationChangesExplorerStructure(records)) this.schedule(viewEl);
         }),
-        shelf: new PinUpShelf(this.app),
+        shelf: new PinUpShelf(this.app, this.removePinUp),
         frame: null
       };
       this.views.set(viewEl, state);
@@ -149,19 +150,20 @@ export class FileExplorerAdapter {
 
   private decorateRows(viewEl: HTMLElement): void {
     const settings = this.getSettings();
+    const mobile = Platform.isMobile || viewEl.ownerDocument.body.hasClass("is-mobile");
     for (const row of viewEl.querySelectorAll<HTMLElement>(ROW_SELECTOR)) {
       const path = row.dataset.path;
       if (!path) continue;
       const pin = settings.pins[path];
 
-      row.addClass("pinup-row");
+      row.toggleClass("pinup-row", !mobile);
       row.toggleClass(
         "is-pinup-hidden",
         settings.hideOriginalsForPinUp && pin?.mode === "pin-up"
       );
 
       const existing = row.querySelector<HTMLElement>(".pinup-inline-button");
-      if (!settings.showInlinePinButtons) {
+      if (!settings.showInlinePinButtons || mobile || !pin) {
         existing?.remove();
         continue;
       }
@@ -174,15 +176,18 @@ export class FileExplorerAdapter {
         button.addEventListener("click", (event) => {
           event.preventDefault();
           event.stopPropagation();
-          const currentPath = (event.currentTarget as HTMLElement).dataset.path;
+          const target = event.currentTarget as HTMLButtonElement;
+          const currentPath = target.dataset.path;
+          target.blur();
           if (currentPath) this.activatePin(currentPath, event.metaKey || event.ctrlKey);
         });
         row.appendChild(button);
       }
 
       button.dataset.path = path;
-      button.toggleClass("is-active", pin !== undefined);
+      button.toggleClass("is-pinup-active", pin !== undefined);
       button.toggleClass("is-pin-up", pin?.mode === "pin-up");
+      button.setAttribute("aria-pressed", String(pin !== undefined));
       const label = pin?.mode === "pin-up"
         ? "Remove from pin-up"
         : pin?.mode === "normal" ? "Remove pin" : "Pin";

@@ -94,7 +94,7 @@ export class PinupSettingTab extends PluginSettingTab {
 
     new Setting(this.containerEl)
       .setName("Show inline pin buttons")
-      .setDesc("Show a quiet pin control at the right edge of File Explorer rows.")
+      .setDesc("Show a pin control only on files and folders that are already pinned.")
       .addToggle((toggle) => toggle
         .setValue(this.plugin.settings.showInlinePinButtons)
         .onChange(async (value) => {

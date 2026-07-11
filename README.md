@@ -5,9 +5,15 @@ Pinup adds two focused pinning modes to Obsidian's File Explorer without changin
 - **Pin** moves an item above its unpinned siblings inside the same folder. Multiple pins keep a deterministic order.
 - **Pin up** adds an item to a compact shelf directly below the File Explorer toolbar while leaving its original tree entry in place by default.
 
+## Installation
+
+Once Pinup is accepted into the Obsidian Community Plugins directory, install it from **Settings → Community plugins → Browse**. Until then, install the latest GitHub release with BRAT or copy `main.js`, `manifest.json`, and `styles.css` from the release into `<vault>/.obsidian/plugins/pinup/`, then enable **Pinup** in Obsidian.
+
 ## Use
 
-Right-click any file or folder in the File Explorer and choose **Pin**, **Pin up**, or **Unpin**. A small pin control at the right edge of each tree row toggles normal pinning. Command-click that control on macOS, or Control-click on Windows/Linux, to pin up instead. Plain-clicking the control on an existing pin-up removes it from pin-up.
+Right-click any file or folder in the File Explorer and choose **Pin**, **Pin up**, or **Unpin**. On desktop, a small pin control is shown only for items that are already pinned; unpinned rows never show a hover control. Command-click a normal pin on macOS, or Control-click it on Windows/Linux, to switch it to pin-up. Plain-clicking a normal pin unpins it, and plain-clicking a pin-up removes it from pin-up.
+
+On mobile, inline pin controls are not created, so file and folder taps remain native. Use the long-press context menu to pin or pin up. Long-pressing a pin-up shelf item opens a compact menu that can remove it from pin-up; the same menu is available by right-clicking on desktop.
 
 For the active file, the command palette includes:
 
@@ -25,6 +31,10 @@ Settings can hide inline controls, hide the shelf, hide original tree rows for p
 For the best-looking pin icon, install [Nicons](https://github.com/pilafdob/Nicons) by [pilafdob](https://github.com/pilafdob). When Nicons is enabled, Pinup uses its Phosphor push-pin shape through an isolated SVG copy. Pinup removes Nicons-owned classes and styling from that copy so it cannot interfere with Nicons' own icons or colour settings.
 
 Nicons is optional. If it is not installed or unavailable, Pinup automatically uses Obsidian's native Lucide pin icon instead.
+
+## Privacy and data
+
+Pinup makes no network requests and includes no telemetry, analytics, advertising, or accounts. It stores only its settings and the vault-relative paths, pin modes, and ordering of pinned items in Obsidian's plugin data. It does not modify notes, frontmatter, file contents, filenames, or folder names.
 
 ## Credits
 

@@ -35,7 +35,8 @@ export default class PinupPlugin extends Plugin {
     this.explorer = new FileExplorerAdapter(
       this.app,
       () => this.settings,
-      (path, requestPinUp) => void this.activateInlinePin(path, requestPinUp)
+      (path, requestPinUp) => void this.activateInlinePin(path, requestPinUp),
+      (path) => void this.unpin(path)
     );
 
     this.addCommands();
