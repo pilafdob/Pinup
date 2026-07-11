@@ -35,7 +35,7 @@ export default class PinupPlugin extends Plugin {
     this.explorer = new FileExplorerAdapter(
       this.app,
       () => this.settings,
-      (path) => void this.toggle(path, "normal")
+      (path, requestPinUp) => void this.activateInlinePin(path, requestPinUp)
     );
 
     this.addCommands();
@@ -153,6 +153,18 @@ export default class PinupPlugin extends Plugin {
   private async toggle(path: string, mode: PinMode): Promise<void> {
     if (!this.app.vault.getAbstractFileByPath(path)) return;
     await this.replacePins(togglePin(this.settings.pins, path, mode));
+  }
+
+  private async activateInlinePin(path: string, requestPinUp: boolean): Promise<void> {
+    if (requestPinUp) {
+      await this.pin(path, "pin-up");
+      return;
+    }
+    if (this.settings.pins[path]?.mode === "pin-up") {
+      await this.unpin(path);
+      return;
+    }
+    await this.toggle(path, "normal");
   }
 
   private async unpin(path: string): Promise<void> {

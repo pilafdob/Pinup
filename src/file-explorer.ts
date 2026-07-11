@@ -7,11 +7,11 @@ import { PinUpShelf } from "./pin-up-shelf";
 interface ViewState {
   observer: MutationObserver;
   shelf: PinUpShelf;
-  originalOrders: Map<HTMLElement, HTMLElement[]>;
   frame: number | null;
 }
 
 const ROW_SELECTOR = ".nav-file-title[data-path], .nav-folder-title[data-path]";
+const DIRECT_ROW_SELECTOR = ":scope > .nav-file-title[data-path], :scope > .nav-folder-title[data-path]";
 const CONTAINER_SELECTOR = ".nav-files-container, .nav-folder-children";
 function mutationChangesExplorerStructure(records: MutationRecord[]): boolean {
   for (const record of records) {
@@ -44,14 +44,14 @@ function directItem(container: HTMLElement, child: Element): HTMLElement | null 
   const wrapper = child as HTMLElement;
   const row = wrapper.matches(ROW_SELECTOR)
     ? wrapper
-    : wrapper.querySelector<HTMLElement>(`:scope > ${ROW_SELECTOR}`);
+    : wrapper.querySelector<HTMLElement>(DIRECT_ROW_SELECTOR);
   return row ? wrapper : null;
 }
 
 function pathForWrapper(wrapper: HTMLElement): string | null {
   const row = wrapper.matches(ROW_SELECTOR)
     ? wrapper
-    : wrapper.querySelector<HTMLElement>(`:scope > ${ROW_SELECTOR}`);
+    : wrapper.querySelector<HTMLElement>(DIRECT_ROW_SELECTOR);
   return row?.dataset.path ?? null;
 }
 
@@ -61,7 +61,7 @@ export class FileExplorerAdapter {
   constructor(
     private readonly app: App,
     private readonly getSettings: () => PinupSettings,
-    private readonly toggleNormal: (path: string) => void
+    private readonly activatePin: (path: string, requestPinUp: boolean) => void
   ) {}
 
   refreshAll(): void {
@@ -73,8 +73,8 @@ export class FileExplorerAdapter {
     for (const [viewEl, state] of this.views) {
       if (state.frame !== null) viewEl.ownerDocument.defaultView?.cancelAnimationFrame(state.frame);
       state.observer.disconnect();
-      this.restoreNativeOrder(state);
       state.shelf.remove();
+      this.clearVisualOrder(viewEl);
       this.cleanRows(viewEl);
     }
     this.views.clear();
@@ -92,7 +92,6 @@ export class FileExplorerAdapter {
           if (mutationChangesExplorerStructure(records)) this.schedule(viewEl);
         }),
         shelf: new PinUpShelf(this.app),
-        originalOrders: new Map(),
         frame: null
       };
       this.views.set(viewEl, state);
@@ -127,9 +126,8 @@ export class FileExplorerAdapter {
     if (!state) return;
     state.observer.disconnect();
     try {
-      this.restoreNativeOrder(state);
       this.decorateRows(viewEl);
-      this.sortNormalPins(viewEl, state);
+      this.sortNormalPins(viewEl);
       const settings = this.getSettings();
       state.shelf.render(viewEl, settings.pins, settings.showPinUpShelf);
     } finally {
@@ -177,7 +175,7 @@ export class FileExplorerAdapter {
           event.preventDefault();
           event.stopPropagation();
           const currentPath = (event.currentTarget as HTMLElement).dataset.path;
-          if (currentPath) this.toggleNormal(currentPath);
+          if (currentPath) this.activatePin(currentPath, event.metaKey || event.ctrlKey);
         });
         row.appendChild(button);
       }
@@ -185,31 +183,31 @@ export class FileExplorerAdapter {
       button.dataset.path = path;
       button.toggleClass("is-active", pin !== undefined);
       button.toggleClass("is-pin-up", pin?.mode === "pin-up");
-      const label = pin?.mode === "normal" ? "Remove pin" : "Pin";
+      const label = pin?.mode === "pin-up"
+        ? "Remove from pin-up"
+        : pin?.mode === "normal" ? "Remove pin" : "Pin";
       button.setAttribute("aria-label", `${label}: ${path}`);
-      button.setAttribute("title", pin?.mode === "pin-up" ? "Pinned up (click to pin normally)" : label);
+      button.setAttribute(
+        "title",
+        pin?.mode === "pin-up"
+          ? "Pinned up (click to remove from pin-up)"
+          : `${label} (Command/Control-click to pin up)`
+      );
       ensurePushPinIcon(this.app, button);
     }
   }
 
-  private restoreNativeOrder(state: ViewState): void {
-    for (const [container, order] of state.originalOrders) {
-      if (!container.isConnected) {
-        state.originalOrders.delete(container);
-        continue;
+  private clearVisualOrder(viewEl: HTMLElement): void {
+    for (const container of viewEl.querySelectorAll<HTMLElement>(".pinup-order-container")) {
+      container.removeClass("pinup-order-container");
+      for (const child of Array.from(container.children)) {
+        (child as HTMLElement).style.removeProperty("order");
       }
-      const current = Array.from(container.children)
-        .map((child) => directItem(container, child))
-        .filter((child): child is HTMLElement => child !== null);
-      if (current.length !== order.length || current.some((node) => !order.includes(node))) {
-        state.originalOrders.delete(container);
-        continue;
-      }
-      for (const node of order) container.appendChild(node);
     }
   }
 
-  private sortNormalPins(viewEl: HTMLElement, state: ViewState): void {
+  private sortNormalPins(viewEl: HTMLElement): void {
+    this.clearVisualOrder(viewEl);
     const normal = Object.values(this.getSettings().pins)
       .filter((pin): pin is PinState => pin.mode === "normal");
     if (normal.length === 0) return;
@@ -220,7 +218,6 @@ export class FileExplorerAdapter {
         .map((child) => directItem(container, child))
         .filter((child): child is HTMLElement => child !== null);
       if (wrappers.length === 0) continue;
-      if (!state.originalOrders.has(container)) state.originalOrders.set(container, [...wrappers]);
 
       const paths = wrappers.map((wrapper) => pathForWrapper(wrapper));
       const folder = paths.find((path): path is string => path !== null);
@@ -235,9 +232,10 @@ export class FileExplorerAdapter {
         .sort((a, b) => comparePins(pinByPath.get(a.path)!, pinByPath.get(b.path)!));
       if (pinned.length === 0) continue;
 
-      const pinnedNodes = new Set(pinned.map((entry) => entry.wrapper));
-      const firstUnpinned = wrappers.find((wrapper) => !pinnedNodes.has(wrapper)) ?? null;
-      for (const { wrapper } of pinned) container.insertBefore(wrapper, firstUnpinned);
+      container.addClass("pinup-order-container");
+      pinned.forEach(({ wrapper }, index) => {
+        wrapper.style.order = String(index - pinned.length);
+      });
     }
   }
 }

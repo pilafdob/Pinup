@@ -54,6 +54,18 @@ test("refreshes rows restored after startup while ignoring Pinup's own DOM", () 
   assert.match(explorer, /attributeFilter: \["data-path"\]/);
 });
 
+test("orders pinned rows without moving native File Explorer nodes", () => {
+  assert.match(styles, /\.pinup-order-container\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;/s);
+  assert.match(explorer, /wrapper\.style\.order = String\(index - pinned\.length\)/);
+  assert.doesNotMatch(explorer, /container\.(?:appendChild|insertBefore)\(/);
+});
+
+test("uses modifier-click for pin-up and plain-click to remove an existing pin-up", () => {
+  assert.match(explorer, /event\.metaKey \|\| event\.ctrlKey/);
+  assert.match(main, /requestPinUp[\s\S]*this\.pin\(path, "pin-up"\)/);
+  assert.match(main, /this\.settings\.pins\[path\]\?\.mode === "pin-up"[\s\S]*this\.unpin\(path\)/);
+});
+
 test("renders pin-up indicators with a visibly heavier pin stroke", () => {
   assert.match(styles, /\.pinup-shelf-item-icon svg,\s*\.pinup-inline-button\.is-pin-up > svg/);
   assert.match(styles, /stroke-width:\s*2\.75px/);
@@ -61,8 +73,10 @@ test("renders pin-up indicators with a visibly heavier pin stroke", () => {
   assert.equal((styles.match(/opacity:\s*1;/g) ?? []).length >= 2, true);
 });
 
-test("keeps Pinup icons isolated from Nicons", () => {
+test("prefers an isolated Nicons icon with a native Lucide fallback", () => {
+  assert.match(icons, /renderPackIcon\?\.\(staging, "nicons:push-pin", null\)/);
+  assert.match(icons, /cloneNode\(true\)/);
+  assert.match(icons, /classList\.remove\("nicons-pack-icon"\)/);
   assert.match(icons, /setIcon\(container, "pin"\)/);
-  assert.doesNotMatch(icons, /nicons|plugins\?\.|getPlugin|renderPackIcon/i);
-  assert.doesNotMatch(styles, /nicons/i);
+  assert.doesNotMatch(styles, /\.nicons-pack-icon/);
 });

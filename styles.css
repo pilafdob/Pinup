@@ -7,6 +7,12 @@
   display: none;
 }
 
+.pinup-order-container {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
 .pinup-inline-button {
   position: absolute;
   inset-inline-end: 5px;
@@ -62,6 +68,11 @@
   stroke: currentColor;
   stroke-width: 2.75px;
   paint-order: stroke fill;
+}
+
+.pinup-shelf-item-icon[data-pinup-icon-source="nicons"] svg,
+.pinup-inline-button.is-pin-up[data-pinup-icon-source="nicons"] > svg {
+  stroke-width: 8px;
 }
 
 .pinup-shelf {

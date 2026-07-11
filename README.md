@@ -7,7 +7,7 @@ Pinup adds two focused pinning modes to Obsidian's File Explorer without changin
 
 ## Use
 
-Right-click any file or folder in the File Explorer and choose **Pin**, **Pin up**, or **Unpin**. A small pin control at the right edge of each tree row toggles normal pinning.
+Right-click any file or folder in the File Explorer and choose **Pin**, **Pin up**, or **Unpin**. A small pin control at the right edge of each tree row toggles normal pinning. Command-click that control on macOS, or Control-click on Windows/Linux, to pin up instead. Plain-clicking the control on an existing pin-up removes it from pin-up.
 
 For the active file, the command palette includes:
 
@@ -22,7 +22,13 @@ Settings can hide inline controls, hide the shelf, hide original tree rows for p
 
 ## Icons
 
-Pinup uses Obsidian's native Lucide pin icon and does not access, style, or depend on Nicons. Nicons keeps full control of its own icons and colour settings.
+For the best-looking pin icon, install [Nicons](https://github.com/pilafdob/Nicons) by [pilafdob](https://github.com/pilafdob). When Nicons is enabled, Pinup uses its Phosphor push-pin shape through an isolated SVG copy. Pinup removes Nicons-owned classes and styling from that copy so it cannot interfere with Nicons' own icons or colour settings.
+
+Nicons is optional. If it is not installed or unavailable, Pinup automatically uses Obsidian's native Lucide pin icon instead.
+
+## Credits
+
+- [Nicons](https://github.com/pilafdob/Nicons) — optional enhanced pin icon, created by [pilafdob](https://github.com/pilafdob).
 
 ## Known compatibility boundary
 
