@@ -69,15 +69,28 @@ test("uses modifier-click for pin-up and plain-click to remove an existing pin-u
   assert.match(main, /this\.settings\.pins\[path\]\?\.mode === "pin-up"[\s\S]*this\.unpin\(path\)/);
 });
 
-test("creates inline controls only for saved pins and never on mobile", () => {
+test("creates isolated inline controls for saved pins on desktop and mobile", () => {
   assert.match(explorer, /Platform\.isMobile/);
   assert.match(explorer, /body\.hasClass\("is-mobile"\)/);
-  assert.match(explorer, /\|\| !pin\)/);
+  assert.match(explorer, /showInlineButton = settings\.showInlinePinButtons && pin !== undefined/);
+  assert.match(explorer, /row\.toggleClass\("pinup-row", !mobile \|\| showInlineButton\)/);
+  assert.match(explorer, /if \(!showInlineButton\)/);
+  for (const eventName of ["pointerdown", "pointerup", "touchstart", "touchend", "mousedown"]) {
+    assert.match(explorer, new RegExp(`\\"${eventName}\\"`));
+  }
+  assert.match(explorer, /const stopRowActivation = \(event: Event\): void => event\.stopPropagation\(\)/);
+  assert.match(explorer, /addEventListener\("click", \(event\) => \{\s*event\.preventDefault\(\);\s*event\.stopPropagation\(\);/);
   assert.match(explorer, /target\.blur\(\)/);
   assert.match(explorer, /is-pinup-active/);
+  assert.doesNotMatch(explorer, /\|\| mobile \|\| !pin/);
   assert.doesNotMatch(explorer, /toggleClass\("is-active"/);
   assert.doesNotMatch(styles, /\.pinup-row:hover > \.pinup-inline-button/);
   assert.doesNotMatch(styles, /\.pinup-inline-button\.is-active/);
+});
+
+test("reserves a mobile-sized touch target only on decorated rows", () => {
+  assert.match(styles, /\.is-mobile \.pinup-row\s*\{\s*padding-inline-end:\s*50px;/);
+  assert.match(styles, /\.is-mobile \.pinup-inline-button\s*\{[^}]*width:\s*44px;[^}]*height:\s*44px;/s);
 });
 
 test("offers shelf removal through a context menu", () => {
@@ -86,8 +99,12 @@ test("offers shelf removal through a context menu", () => {
   assert.match(shelf, /this\.removePinUp\(file\.path\)/);
 });
 
-test("adds mobile shelf breathing room", () => {
-  assert.match(styles, /\.is-mobile \.pinup-shelf\s*\{\s*margin-block-start:\s*12px;/);
+test("styles the mobile shelf as a touch-friendly island", () => {
+  assert.match(styles, /Mobile pin-up island: keep this block self-contained for easy rollback/);
+  assert.match(styles, /\.is-mobile \.pinup-shelf\s*\{[^}]*margin:\s*12px 10px 10px;[^}]*padding:\s*6px;[^}]*border-radius:\s*var\(--radius-l\);[^}]*box-shadow:\s*var\(--shadow-s\);/s);
+  assert.match(styles, /\.is-mobile \.pinup-shelf-item\s*\{[^}]*min-height:\s*44px;[^}]*gap:\s*8px;[^}]*padding:\s*8px 10px;/s);
+  assert.match(styles, /\.is-mobile \.pinup-shelf-item:active\s*\{[^}]*transform:\s*scale\(0\.985\);/s);
+  assert.match(styles, /\.is-mobile \.pinup-shelf-item-icon\s*\{[^}]*width:\s*18px;[^}]*height:\s*18px;/s);
 });
 
 test("renders pin-up indicators with a visibly heavier pin stroke", () => {

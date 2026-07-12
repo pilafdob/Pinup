@@ -13,7 +13,7 @@ Once Pinup is accepted into the Obsidian Community Plugins directory, install it
 
 Right-click any file or folder in the File Explorer and choose **Pin**, **Pin up**, or **Unpin**. On desktop, a small pin control is shown only for items that are already pinned; unpinned rows never show a hover control. Command-click a normal pin on macOS, or Control-click it on Windows/Linux, to switch it to pin-up. Plain-clicking a normal pin unpins it, and plain-clicking a pin-up removes it from pin-up.
 
-On mobile, inline pin controls are not created, so file and folder taps remain native. Use the long-press context menu to pin or pin up. Long-pressing a pin-up shelf item opens a compact menu that can remove it from pin-up; the same menu is available by right-clicking on desktop.
+On mobile, pinned files and folders show a touch-sized pin control. Tap the file or folder row to open or reveal it normally; only tapping the pin control unpins it. Use the long-press context menu to pin or pin up an unpinned item. Long-pressing a pin-up shelf item opens a compact menu that can remove it from pin-up; the same menu is available by right-clicking on desktop.
 
 For the active file, the command palette includes:
 

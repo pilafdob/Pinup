@@ -2,6 +2,12 @@
 
 All notable changes to Pinup are documented in this file.
 
+## 1.0.1 - 2026-07-12
+
+- Show inline pin controls beside pinned files and folders on mobile.
+- Keep native file-row taps intact by isolating touch, pointer, mouse, and click events to the pin control, so only the control unpins the item.
+- Refine the mobile pin-up shelf into a roomier, touch-friendly island using theme-native spacing, rounding, and pressed-state feedback.
+
 ## 1.0.0 - 2026-07-11
 
 First stable public release.

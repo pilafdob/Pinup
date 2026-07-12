@@ -49,6 +49,16 @@
   opacity: 1 !important;
 }
 
+.is-mobile .pinup-row {
+  padding-inline-end: 50px;
+}
+
+.is-mobile .pinup-inline-button {
+  inset-inline-end: 2px;
+  width: 44px;
+  height: 44px;
+}
+
 .pinup-shelf-item-icon svg {
   width: 100%;
   height: 100%;
@@ -78,10 +88,6 @@
   background: var(--background-secondary);
 }
 
-.is-mobile .pinup-shelf {
-  margin-block-start: 12px;
-}
-
 .pinup-shelf-item {
   display: flex;
   width: 100%;
@@ -100,6 +106,7 @@
   line-height: var(--line-height-tight);
   text-align: start;
   cursor: pointer;
+  transition: color 100ms ease, background-color 100ms ease, transform 100ms ease;
 }
 
 .pinup-shelf-item:hover,
@@ -120,4 +127,34 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Mobile pin-up island: keep this block self-contained for easy rollback. */
+.is-mobile .pinup-shelf {
+  gap: 4px;
+  margin: 12px 10px 10px;
+  padding: 6px;
+  border-radius: var(--radius-l);
+  box-shadow: var(--shadow-s);
+}
+
+.is-mobile .pinup-shelf-item {
+  min-height: 44px;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-m);
+  font-size: var(--font-ui-small);
+  font-weight: var(--font-medium);
+}
+
+.is-mobile .pinup-shelf-item:active {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+  transform: scale(0.985);
+}
+
+.is-mobile .pinup-shelf-item-icon {
+  width: 18px;
+  height: 18px;
+  flex-basis: 18px;
 }

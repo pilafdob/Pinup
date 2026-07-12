@@ -155,15 +155,16 @@ export class FileExplorerAdapter {
       const path = row.dataset.path;
       if (!path) continue;
       const pin = settings.pins[path];
+      const showInlineButton = settings.showInlinePinButtons && pin !== undefined;
 
-      row.toggleClass("pinup-row", !mobile);
+      row.toggleClass("pinup-row", !mobile || showInlineButton);
       row.toggleClass(
         "is-pinup-hidden",
         settings.hideOriginalsForPinUp && pin?.mode === "pin-up"
       );
 
       const existing = row.querySelector<HTMLElement>(".pinup-inline-button");
-      if (!settings.showInlinePinButtons || mobile || !pin) {
+      if (!showInlineButton) {
         existing?.remove();
         continue;
       }
@@ -172,7 +173,16 @@ export class FileExplorerAdapter {
       if (!existing) {
         button.className = "pinup-inline-button clickable-icon";
         button.setAttribute("type", "button");
-        button.addEventListener("mousedown", (event) => event.stopPropagation());
+        const stopRowActivation = (event: Event): void => event.stopPropagation();
+        for (const eventName of [
+          "pointerdown",
+          "pointerup",
+          "touchstart",
+          "touchend",
+          "mousedown"
+        ]) {
+          button.addEventListener(eventName, stopRowActivation);
+        }
         button.addEventListener("click", (event) => {
           event.preventDefault();
           event.stopPropagation();
