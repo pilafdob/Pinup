@@ -2,14 +2,36 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const [main, explorer, shelf, icons, styles, manifest] = await Promise.all([
+const [main, explorer, fileOrder, shelf, icons, settings, styles, manifest, releaseWorkflow] = await Promise.all([
   readFile("src/main.ts", "utf8"),
   readFile("src/file-explorer.ts", "utf8"),
+  readFile("src/file-order.ts", "utf8"),
   readFile("src/pin-up-shelf.ts", "utf8"),
   readFile("src/icons.ts", "utf8"),
+  readFile("src/settings.ts", "utf8"),
   readFile("styles.css", "utf8"),
-  readFile("manifest.json", "utf8").then(JSON.parse)
+  readFile("manifest.json", "utf8").then(JSON.parse),
+  readFile(".github/workflows/release.yml", "utf8")
 ]);
+
+test("follows current Obsidian review guidance", () => {
+  assert.match(explorer, /record\.target\.instanceOf\(Element\)/);
+  assert.doesNotMatch(explorer, /instanceof Element/);
+  assert.doesNotMatch(icons, /\.innerHTML\s*=|\.outerHTML\s*=/);
+  assert.match(icons, /createElementNS\(SVG_NAMESPACE, "svg"\)/);
+  assert.doesNotMatch(main, /\bTFile\b/);
+  assert.match(settings, /\.setDestructive/);
+  assert.doesNotMatch(settings, /\.setWarning/);
+  assert.doesNotMatch(styles, /!important/);
+});
+
+test("attests the CI-built release assets before publishing them", () => {
+  assert.match(releaseWorkflow, /id-token:\s*write/);
+  assert.match(releaseWorkflow, /attestations:\s*write/);
+  assert.match(releaseWorkflow, /uses:\s*actions\/attest@v4/);
+  assert.match(releaseWorkflow, /subject-path:\s*\|\s*\n\s*main\.js\s*\n\s*styles\.css/);
+  assert.match(releaseWorkflow, /gh release create/);
+});
 
 test("registers every required command", () => {
   for (const id of [
@@ -55,12 +77,16 @@ test("refreshes rows restored after startup while ignoring Pinup's own DOM", () 
   assert.match(explorer, /attributeFilter: \["data-path"\]/);
 });
 
-test("orders pinned rows without moving native File Explorer nodes", () => {
-  assert.match(explorer, /\.nav-files-container > div/);
-  assert.match(styles, /\.pinup-order-container\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;/s);
-  assert.match(explorer, /wrapper\.style\.order = String\(index - pinned\.length\)/);
-  assert.doesNotMatch(explorer, /container\.(?:appendChild|insertBefore)\(/);
-  assert.match(explorer, /pin\.mode === "normal"/);
+test("orders pins in the File Explorer model before virtualization", () => {
+  assert.match(explorer, /around<FileExplorerPrototype>/);
+  assert.match(explorer, /getSortedFolderItems\(old\)/);
+  assert.match(explorer, /orderFileExplorerItems\(items, getPins\(\)\)/);
+  assert.match(explorer, /requestSort/);
+  assert.match(fileOrder, /item\.file\?\.path \?\? item\.path/);
+  assert.match(fileOrder, /pins\[path\]\?\.mode === "normal"/);
+  assert.match(fileOrder, /comparePins\(a\.pin, b\.pin\)/);
+  assert.doesNotMatch(explorer, /style\.order|insertBefore/);
+  assert.doesNotMatch(styles, /pinup-order-container/);
 });
 
 test("uses modifier-click for pin-up and plain-click to remove an existing pin-up", () => {
@@ -110,7 +136,7 @@ test("styles the mobile shelf as a touch-friendly island", () => {
 test("renders pin-up indicators with a visibly heavier pin stroke", () => {
   assert.match(styles, /\.pinup-shelf-item-icon svg,\s*\.pinup-inline-button\.is-pin-up > svg/);
   assert.match(styles, /stroke-width:\s*2\.75px/);
-  assert.match(styles, /\.pinup-row \.pinup-inline-button > svg\s*\{\s*opacity:\s*1 !important;/);
+  assert.match(styles, /\.workspace-leaf-content\[data-type="file-explorer"\] \.pinup-row \.pinup-inline-button > svg\s*\{\s*opacity:\s*1;/);
   assert.equal((styles.match(/opacity:\s*1;/g) ?? []).length >= 2, true);
 });
 

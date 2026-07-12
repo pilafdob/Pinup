@@ -16,6 +16,19 @@ export const DEFAULT_SETTINGS: PinupSettings = {
   hideOriginalsForPinUp: false
 };
 
+interface DestructiveButtonBridge {
+  buttonEl: HTMLButtonElement;
+  setDestructive?: () => unknown;
+}
+
+function markDestructive(button: DestructiveButtonBridge): void {
+  if (button.setDestructive) {
+    button.setDestructive();
+    return;
+  }
+  button.buttonEl.addClass("mod-warning");
+}
+
 function isMode(value: unknown): value is PinMode {
   return value === "normal" || value === "pin-up";
 }
@@ -65,14 +78,16 @@ class ConfirmClearPinsModal extends Modal {
     });
     new Setting(this.contentEl)
       .addButton((button) => button.setButtonText("Cancel").onClick(() => this.close()))
-      .addButton((button) => button
-        .setWarning()
-        .setCta()
-        .setButtonText("Clear all pins")
-        .onClick(() => {
-          this.close();
-          this.confirm();
-        }));
+      .addButton((button) => {
+        markDestructive(button);
+        button
+          .setCta()
+          .setButtonText("Clear all pins")
+          .onClick(() => {
+            this.close();
+            this.confirm();
+          });
+      });
   }
 
   onClose(): void {
@@ -125,11 +140,13 @@ export class PinupSettingTab extends PluginSettingTab {
     new Setting(this.containerEl)
       .setName("Clear all pins")
       .setDesc("Remove Pinup's saved state without changing any vault files.")
-      .addButton((button) => button
-        .setWarning()
-        .setButtonText("Clear all pins")
-        .onClick(() => confirmClearPins(this.app, () => {
-          void this.plugin.clearPins();
-        })));
+      .addButton((button) => {
+        markDestructive(button);
+        button
+          .setButtonText("Clear all pins")
+          .onClick(() => confirmClearPins(this.app, () => {
+            void this.plugin.clearPins();
+          }));
+      });
   }
 }

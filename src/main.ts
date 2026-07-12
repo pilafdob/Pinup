@@ -3,7 +3,6 @@ import {
   Notice,
   Plugin,
   TAbstractFile,
-  TFile,
   type MenuItem
 } from "obsidian";
 import { FileExplorerAdapter } from "./file-explorer";

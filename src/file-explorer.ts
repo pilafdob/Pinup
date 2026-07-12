@@ -1,21 +1,34 @@
-import { Platform, type App } from "obsidian";
+import { around } from "monkey-around";
+import { Platform, type App, type TFolder } from "obsidian";
+import { orderFileExplorerItems } from "./file-order";
 import { ensurePushPinIcon } from "./icons";
 import type { PinupSettings } from "./settings";
-import { comparePins, type PinState } from "./pin-state";
 import { PinUpShelf } from "./pin-up-shelf";
 
 interface ViewState {
   observer: MutationObserver;
   shelf: PinUpShelf;
   frame: number | null;
+  requestSort: () => void;
+}
+
+interface FileExplorerTreeItem {
+  file?: { path: string };
+}
+
+type GetSortedFolderItems = (this: unknown, folder: TFolder) => FileExplorerTreeItem[];
+
+type FileExplorerPrototype = Record<"getSortedFolderItems", GetSortedFolderItems>;
+
+interface SortableFileExplorerView {
+  containerEl: HTMLElement;
+  requestSort?: () => void;
 }
 
 const ROW_SELECTOR = ".nav-file-title[data-path], .nav-folder-title[data-path]";
-const DIRECT_ROW_SELECTOR = ":scope > .nav-file-title[data-path], :scope > .nav-folder-title[data-path]";
-const CONTAINER_SELECTOR = ".nav-files-container, .nav-files-container > div, .nav-folder-children";
 function mutationChangesExplorerStructure(records: MutationRecord[]): boolean {
   for (const record of records) {
-    const target = record.target instanceof Element ? record.target : null;
+    const target = record.target.instanceOf(Element) ? record.target : null;
     if (target?.closest(".pinup-shelf, .pinup-inline-button")) continue;
 
     const targetRow = target?.closest<HTMLElement>(ROW_SELECTOR);
@@ -35,28 +48,9 @@ function mutationChangesExplorerStructure(records: MutationRecord[]): boolean {
   return false;
 }
 
-function parentPath(path: string): string {
-  const slash = path.lastIndexOf("/");
-  return slash === -1 ? "" : path.slice(0, slash);
-}
-
-function directItem(container: HTMLElement, child: Element): HTMLElement | null {
-  const wrapper = child as HTMLElement;
-  const row = wrapper.matches(ROW_SELECTOR)
-    ? wrapper
-    : wrapper.querySelector<HTMLElement>(DIRECT_ROW_SELECTOR);
-  return row ? wrapper : null;
-}
-
-function pathForWrapper(wrapper: HTMLElement): string | null {
-  const row = wrapper.matches(ROW_SELECTOR)
-    ? wrapper
-    : wrapper.querySelector<HTMLElement>(DIRECT_ROW_SELECTOR);
-  return row?.dataset.path ?? null;
-}
-
 export class FileExplorerAdapter {
   private readonly views = new Map<HTMLElement, ViewState>();
+  private readonly sortPatchUninstallers = new Map<FileExplorerPrototype, () => void>();
 
   constructor(
     private readonly app: App,
@@ -67,16 +61,22 @@ export class FileExplorerAdapter {
 
   refreshAll(): void {
     this.syncViews();
-    for (const viewEl of this.views.keys()) this.refreshView(viewEl);
+    for (const [viewEl, state] of this.views) {
+      state.requestSort();
+      this.refreshView(viewEl);
+    }
   }
 
   unload(): void {
+    for (const uninstall of this.sortPatchUninstallers.values()) uninstall();
+    this.sortPatchUninstallers.clear();
+
     for (const [viewEl, state] of this.views) {
       if (state.frame !== null) viewEl.ownerDocument.defaultView?.cancelAnimationFrame(state.frame);
       state.observer.disconnect();
       state.shelf.remove();
-      this.clearVisualOrder(viewEl);
       this.cleanRows(viewEl);
+      state.requestSort();
     }
     this.views.clear();
   }
@@ -84,7 +84,9 @@ export class FileExplorerAdapter {
   private syncViews(): void {
     const live = new Set<HTMLElement>();
     for (const leaf of this.app.workspace.getLeavesOfType("file-explorer")) {
-      const viewEl = leaf.view.containerEl;
+      const view = leaf.view as typeof leaf.view & SortableFileExplorerView;
+      this.patchFileExplorerSort(view);
+      const viewEl = view.containerEl;
       live.add(viewEl);
       if (this.views.has(viewEl)) continue;
 
@@ -93,7 +95,8 @@ export class FileExplorerAdapter {
           if (mutationChangesExplorerStructure(records)) this.schedule(viewEl);
         }),
         shelf: new PinUpShelf(this.app, this.removePinUp),
-        frame: null
+        frame: null,
+        requestSort: () => view.requestSort?.()
       };
       this.views.set(viewEl, state);
       state.observer.observe(viewEl, {
@@ -112,6 +115,26 @@ export class FileExplorerAdapter {
     }
   }
 
+  private patchFileExplorerSort(view: SortableFileExplorerView): void {
+    const prototype = Object.getPrototypeOf(view) as Partial<FileExplorerPrototype>;
+    if (
+      typeof prototype.getSortedFolderItems !== "function" ||
+      this.sortPatchUninstallers.has(prototype as FileExplorerPrototype)
+    ) return;
+
+    const patchable = prototype as FileExplorerPrototype;
+    const getPins = () => this.getSettings().pins;
+    const uninstall = around<FileExplorerPrototype>(patchable, {
+      getSortedFolderItems(old) {
+        return function (this: unknown, folder: TFolder): FileExplorerTreeItem[] {
+          const items = old.call(this, folder);
+          return orderFileExplorerItems(items, getPins());
+        };
+      }
+    });
+    this.sortPatchUninstallers.set(patchable, uninstall);
+  }
+
   private schedule(viewEl: HTMLElement): void {
     const state = this.views.get(viewEl);
     const win = viewEl.ownerDocument.defaultView;
@@ -128,7 +151,6 @@ export class FileExplorerAdapter {
     state.observer.disconnect();
     try {
       this.decorateRows(viewEl);
-      this.sortNormalPins(viewEl);
       const settings = this.getSettings();
       state.shelf.render(viewEl, settings.pins, settings.showPinUpShelf);
     } finally {
@@ -209,48 +231,6 @@ export class FileExplorerAdapter {
           : `${label} (Command/Control-click to pin up)`
       );
       ensurePushPinIcon(this.app, button);
-    }
-  }
-
-  private clearVisualOrder(viewEl: HTMLElement): void {
-    for (const container of viewEl.querySelectorAll<HTMLElement>(".pinup-order-container")) {
-      container.removeClass("pinup-order-container");
-      for (const child of Array.from(container.children)) {
-        (child as HTMLElement).style.removeProperty("order");
-      }
-    }
-  }
-
-  private sortNormalPins(viewEl: HTMLElement): void {
-    this.clearVisualOrder(viewEl);
-    const normal = Object.values(this.getSettings().pins)
-      .filter((pin): pin is PinState => pin.mode === "normal");
-    if (normal.length === 0) return;
-    const pinByPath = new Map(normal.map((pin) => [pin.path, pin]));
-
-    for (const container of viewEl.querySelectorAll<HTMLElement>(CONTAINER_SELECTOR)) {
-      const wrappers = Array.from(container.children)
-        .map((child) => directItem(container, child))
-        .filter((child): child is HTMLElement => child !== null);
-      if (wrappers.length === 0) continue;
-
-      const paths = wrappers.map((wrapper) => pathForWrapper(wrapper));
-      const folder = paths.find((path): path is string => path !== null);
-      if (folder === undefined) continue;
-      const expectedParent = parentPath(folder);
-
-      const pinned = wrappers
-        .map((wrapper) => ({ wrapper, path: pathForWrapper(wrapper) }))
-        .filter((entry): entry is { wrapper: HTMLElement; path: string } =>
-          entry.path !== null && parentPath(entry.path) === expectedParent && pinByPath.has(entry.path)
-        )
-        .sort((a, b) => comparePins(pinByPath.get(a.path)!, pinByPath.get(b.path)!));
-      if (pinned.length === 0) continue;
-
-      container.addClass("pinup-order-container");
-      pinned.forEach(({ wrapper }, index) => {
-        wrapper.style.order = String(index - pinned.length);
-      });
     }
   }
 }

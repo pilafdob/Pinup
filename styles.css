@@ -7,12 +7,6 @@
   display: none;
 }
 
-.pinup-order-container {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-}
-
 .pinup-inline-button {
   position: absolute;
   inset-inline-end: 5px;
@@ -45,8 +39,8 @@
   opacity: 1;
 }
 
-.pinup-row .pinup-inline-button > svg {
-  opacity: 1 !important;
+.workspace-leaf-content[data-type="file-explorer"] .pinup-row .pinup-inline-button > svg {
+  opacity: 1;
 }
 
 .is-mobile .pinup-row {

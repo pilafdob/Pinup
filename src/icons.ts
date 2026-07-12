@@ -14,6 +14,24 @@ interface NiconsRuntime {
 
 export type PinupIconSource = "nicons" | "native";
 
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+
+function appendFallbackPushPin(container: HTMLElement): void {
+  const svg = container.ownerDocument.createElementNS(SVG_NAMESPACE, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+
+  const path = container.ownerDocument.createElementNS(SVG_NAMESPACE, "path");
+  path.setAttribute("fill", "none");
+  path.setAttribute("stroke", "currentColor");
+  path.setAttribute("stroke-linecap", "round");
+  path.setAttribute("stroke-linejoin", "round");
+  path.setAttribute("stroke-width", "2");
+  path.setAttribute("d", "m14 4 6 6-3 1-4 4-1 5-3-3-3-3 5-1 4-4 1-3Z");
+  svg.appendChild(path);
+  container.appendChild(svg);
+}
+
 function renderIsolatedNiconsIcon(app: App, container: HTMLElement): boolean {
   const plugin = (app as AppWithPlugins).plugins?.getPlugin?.("nicons");
   if (!plugin || typeof plugin !== "object") return false;
@@ -45,8 +63,7 @@ export function renderPushPinIcon(app: App, container: HTMLElement): PinupIconSo
 
   setIcon(container, "pin");
   if (!container.querySelector("svg")) {
-    container.innerHTML =
-      '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14 4 6 6-3 1-4 4-1 5-3-3-3-3 5-1 4-4 1-3Z"/></svg>';
+    appendFallbackPushPin(container);
   }
   return "native";
 }

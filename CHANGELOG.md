@@ -2,6 +2,11 @@
 
 All notable changes to Pinup are documented in this file.
 
+## 1.0.2 - 2026-07-12
+
+- Apply normal pins to the File Explorer's sorted item model so folders remain at the pinned position while Obsidian virtualizes and renders their children correctly.
+- Address current Obsidian review guidance for cross-window DOM checks, safe SVG creation, deprecated destructive buttons, unused imports, CSS specificity, and release-asset attestations.
+
 ## 1.0.1 - 2026-07-12
 
 - Show inline pin controls beside pinned files and folders on mobile.
