@@ -40,6 +40,8 @@ Pinup makes no network requests and includes no telemetry, analytics, advertisin
 
 - [Nicons](https://github.com/pilafdob/Nicons) — optional enhanced pin icon, created by [pilafdob](https://github.com/pilafdob).
 
+This Plugin was developed by Filip, @pilafdob.
+
 ## Known compatibility boundary
 
 Obsidian does not expose File Explorer row ordering or inline shelf placement through stable public APIs. Those DOM interactions are isolated in `src/file-explorer.ts` and `src/pin-up-shelf.ts`; if the expected toolbar/tree structure changes, only that visual enhancement stops and the plugin's saved state, commands, and context menus remain available.
