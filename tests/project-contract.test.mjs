@@ -125,12 +125,15 @@ test("offers shelf removal through a context menu", () => {
   assert.match(shelf, /this\.removePinUp\(file\.path\)/);
 });
 
-test("styles the mobile shelf as a touch-friendly island", () => {
-  assert.match(styles, /Mobile pin-up island: keep this block self-contained for easy rollback/);
-  assert.match(styles, /\.is-mobile \.pinup-shelf\s*\{[^}]*margin:\s*12px 10px 10px;[^}]*padding:\s*6px;[^}]*border-radius:\s*var\(--radius-l\);[^}]*box-shadow:\s*var\(--shadow-s\);/s);
-  assert.match(styles, /\.is-mobile \.pinup-shelf-item\s*\{[^}]*min-height:\s*44px;[^}]*gap:\s*8px;[^}]*padding:\s*8px 10px;/s);
+test("puts the shelf before the file rows inside the native scroller", () => {
+  assert.match(shelf, /const tree = viewEl\.querySelector<HTMLElement>\("\.nav-files-container"\)/);
+  assert.match(shelf, /if \(tree\.firstElementChild !== this\.shelfEl\) \{\s*tree\.prepend\(this\.shelfEl\)/);
+});
+
+test("fits more pins in the mobile island while keeping touch-sized buttons", () => {
+  assert.match(styles, /\.is-mobile \.pinup-shelf\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fit, minmax\(min\(100%, 112px\), 1fr\)\)/s);
+  assert.match(styles, /\.is-mobile \.pinup-shelf-item\s*\{[^}]*min-height:\s*44px;/s);
   assert.match(styles, /\.is-mobile \.pinup-shelf-item:active\s*\{[^}]*transform:\s*scale\(0\.985\);/s);
-  assert.match(styles, /\.is-mobile \.pinup-shelf-item-icon\s*\{[^}]*width:\s*18px;[^}]*height:\s*18px;/s);
 });
 
 test("renders pin-up indicators with a visibly heavier pin stroke", () => {

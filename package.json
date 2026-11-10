@@ -1,6 +1,6 @@
 {
   "name": "pinup",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "description": "Pin files and folders in the Obsidian File Explorer.",
   "main": "main.js",

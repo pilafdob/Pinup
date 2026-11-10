@@ -119,7 +119,7 @@ export class PinupSettingTab extends PluginSettingTab {
 
     new Setting(this.containerEl)
       .setName("Show pin-up shelf")
-      .setDesc("Show pin-up items below the File Explorer toolbar.")
+      .setDesc("Show pin-up items at the top of the scrollable File Explorer list.")
       .addToggle((toggle) => toggle
         .setValue(this.plugin.settings.showPinUpShelf)
         .onChange(async (value) => {

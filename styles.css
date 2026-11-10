@@ -123,22 +123,15 @@
   white-space: nowrap;
 }
 
-/* Mobile pin-up island: keep this block self-contained for easy rollback. */
+/* Fit more pins in the mobile drawer while keeping full touch targets. */
 .is-mobile .pinup-shelf {
-  gap: 4px;
-  margin: 12px 10px 10px;
-  padding: 6px;
-  border-radius: var(--radius-l);
-  box-shadow: var(--shadow-s);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 112px), 1fr));
+  margin: 0 0 4px;
+  padding: 3px;
 }
 
 .is-mobile .pinup-shelf-item {
   min-height: 44px;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: var(--radius-m);
-  font-size: var(--font-ui-small);
-  font-weight: var(--font-medium);
 }
 
 .is-mobile .pinup-shelf-item:active {
@@ -148,7 +141,7 @@
 }
 
 .is-mobile .pinup-shelf-item-icon {
-  width: 18px;
-  height: 18px;
-  flex-basis: 18px;
+  width: 14px;
+  height: 14px;
+  flex-basis: 14px;
 }

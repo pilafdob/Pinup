@@ -17,9 +17,7 @@ export class PinUpShelf {
 
   render(viewEl: HTMLElement, pins: PinMap, enabled: boolean): void {
     const tree = viewEl.querySelector<HTMLElement>(".nav-files-container");
-    const header = viewEl.querySelector<HTMLElement>(".nav-header");
-    const parent = tree?.parentElement ?? null;
-    if (!enabled || !tree || !header || !parent || parent !== header.parentElement) {
+    if (!enabled || !tree) {
       this.remove();
       return;
     }
@@ -39,8 +37,9 @@ export class PinUpShelf {
       this.shelfEl.setAttribute("role", "navigation");
       this.shelfEl.setAttribute("aria-label", "Pinned up files and folders");
     }
-    if (this.shelfEl.parentElement !== parent || this.shelfEl.nextElementSibling !== tree) {
-      parent.insertBefore(this.shelfEl, tree);
+    // Share the native scroller without inserting into the virtualized rows.
+    if (tree.firstElementChild !== this.shelfEl) {
+      tree.prepend(this.shelfEl);
     }
 
     const signature = `${pushPinIconContext(this.app)}\n${resolved

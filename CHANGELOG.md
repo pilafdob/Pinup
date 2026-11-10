@@ -2,6 +2,11 @@
 
 All notable changes to Pinup are documented in this file.
 
+## 1.0.3 - 2026-11-10
+
+- Keep the Pinup Island above the first file while letting it scroll with the File Explorer.
+- Fit more pins on mobile with tighter spacing and a responsive grid that keeps 44 px touch targets.
+
 ## 1.0.2 - 2026-07-12
 
 - Apply normal pins to the File Explorer's sorted item model so folders remain at the pinned position while Obsidian virtualizes and renders their children correctly.
