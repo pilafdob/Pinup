@@ -32,9 +32,8 @@ export class PinUpShelf {
 
     if (!this.shelfEl || this.shelfEl.ownerDocument !== viewEl.ownerDocument) {
       this.remove();
-      this.shelfEl = viewEl.ownerDocument.createElement("div");
+      this.shelfEl = viewEl.ownerDocument.createElement("nav");
       this.shelfEl.className = "pinup-shelf";
-      this.shelfEl.setAttribute("role", "navigation");
       this.shelfEl.setAttribute("aria-label", "Pinned up files and folders");
     }
     // Share the native scroller without inserting into the virtualized rows.

@@ -2,6 +2,11 @@
 
 All notable changes to Pinup are documented in this file.
 
+## 1.0.4 - 2026-11-10
+
+- Refresh pins and the Island as soon as Obsidian reports synced settings changes.
+- Keep the Island compatible with older Nicons versions after reload.
+
 ## 1.0.3 - 2026-11-10
 
 - Keep the Pinup Island above the first file while letting it scroll with the File Explorer.

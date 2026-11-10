@@ -127,6 +127,7 @@ test("offers shelf removal through a context menu", () => {
 
 test("puts the shelf before the file rows inside the native scroller", () => {
   assert.match(shelf, /const tree = viewEl\.querySelector<HTMLElement>\("\.nav-files-container"\)/);
+  assert.match(shelf, /createElement\("nav"\)/);
   assert.match(shelf, /if \(tree\.firstElementChild !== this\.shelfEl\) \{\s*tree\.prepend\(this\.shelfEl\)/);
 });
 

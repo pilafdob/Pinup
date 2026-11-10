@@ -27,6 +27,7 @@ import {
 export default class PinupPlugin extends Plugin {
   settings: PinupSettings = { ...DEFAULT_SETTINGS, pins: {} };
   private explorer: FileExplorerAdapter | null = null;
+  private settingsRevision = 0;
 
   async onload(): Promise<void> {
     this.settings = loadSettings(await this.loadData());
@@ -67,7 +68,17 @@ export default class PinupPlugin extends Plugin {
     this.explorer = null;
   }
 
+  async onExternalSettingsChange(): Promise<void> {
+    const revision = ++this.settingsRevision;
+    const data: unknown = await this.loadData();
+    if (!this.explorer || revision !== this.settingsRevision) return;
+    if (!data || typeof data !== "object" || Array.isArray(data)) return;
+    this.settings = loadSettings(data);
+    this.explorer.refreshAll();
+  }
+
   async saveSettingsAndRefresh(): Promise<void> {
+    this.settingsRevision++;
     await this.saveData(this.settings);
     this.explorer?.refreshAll();
   }
