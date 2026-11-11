@@ -48,6 +48,14 @@ test("does not call vault content, rename, or move writers", () => {
   assert.doesNotMatch(main, /vault\.(?:modify|process|rename|trash|delete|create|createBinary)\s*\(/);
 });
 
+test("exposes a versioned API that stages pin changes for approval", () => {
+  assert.match(main, /pilafdob:pinup:api:v1/);
+  assert.match(main, /version: 1 as const/);
+  assert.match(main, /key !== "pin"/);
+  assert.match(main, /value !== "normal" && value !== "pin-up"/);
+  assert.match(main, /The Pinup pin changed after the proposal was prepared/);
+});
+
 test("keeps all custom CSS scoped and theme-variable based", () => {
   const selectors = styles.match(/(?:^|\n)([^@\n][^{]+)\{/g) ?? [];
   for (const selector of selectors) assert.match(selector, /\.pinup-/);

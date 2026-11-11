@@ -1,7 +1,7 @@
 {
   "id": "pinup",
   "name": "Pinup",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "minAppVersion": "1.4.16",
   "description": "Pin files and folders in the File Explorer, or elevate them to a compact pin-up shelf.",
   "author": "pilafdob",

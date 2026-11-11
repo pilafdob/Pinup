@@ -2,6 +2,10 @@
 
 All notable changes to Pinup are documented in this file.
 
+## 1.0.5 - 2026-11-11
+
+- Expose a versioned API so compatible plugins can inspect and stage pin or pin-up changes for user approval.
+
 ## 1.0.4 - 2026-11-10
 
 - Refresh pins and the Island as soon as Obsidian reports synced settings changes.

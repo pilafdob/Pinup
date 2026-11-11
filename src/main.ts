@@ -1,4 +1,5 @@
 import {
+  Events,
   Menu,
   Notice,
   Plugin,
@@ -24,10 +25,20 @@ import {
   type PinupSettings
 } from "./settings";
 
+function isInterconnectivityReply(value: unknown): value is (api: unknown) => void {
+  return typeof value === "function";
+}
+
 export default class PinupPlugin extends Plugin {
   settings: PinupSettings = { ...DEFAULT_SETTINGS, pins: {} };
   private explorer: FileExplorerAdapter | null = null;
   private settingsRevision = 0;
+  private readonly interconnectivityApi = {
+    version: 1 as const,
+    read: (key: string, path?: string): unknown => this.readInterconnectivityOption(key, path),
+    prepare: (key: string, path: string | undefined, value: unknown): unknown =>
+      this.prepareInterconnectivityChange(key, path, value)
+  };
 
   async onload(): Promise<void> {
     this.settings = loadSettings(await this.loadData());
@@ -58,6 +69,11 @@ export default class PinupPlugin extends Plugin {
 
     this.registerEvent(this.app.vault.on("create", () => this.explorer?.refreshAll()));
     this.registerEvent(this.app.workspace.on("layout-change", () => this.explorer?.refreshAll()));
+    const workspaceEvents: Events = this.app.workspace;
+    this.registerEvent(workspaceEvents.on("pilafdob:pinup:api:v1", (...data: unknown[]) => {
+      const [reply] = data;
+      if (isInterconnectivityReply(reply)) reply(this.interconnectivityApi);
+    }));
     this.app.workspace.onLayoutReady(() => {
       void this.cleanMissingPins().then(() => this.explorer?.refreshAll());
     });
@@ -159,6 +175,44 @@ export default class PinupPlugin extends Plugin {
   private async pin(path: string, mode: PinMode): Promise<void> {
     if (!this.app.vault.getAbstractFileByPath(path)) return;
     await this.replacePins(setPin(this.settings.pins, path, mode));
+  }
+
+  private readInterconnectivityOption(key: string, path?: string): PinMode | null {
+    if (key !== "pin" || !path) throw new Error("Choose a Pinup pin option and an exact vault path.");
+    this.assertInterconnectivityPath(path);
+    return this.settings.pins[path]?.mode ?? null;
+  }
+
+  private prepareInterconnectivityChange(
+    key: string,
+    path: string | undefined,
+    value: unknown
+  ): { before: PinMode | null; after: PinMode | null; apply: () => Promise<void> } {
+    if (key !== "pin" || !path || value !== null && value !== "normal" && value !== "pin-up") {
+      throw new Error("Choose normal, pin-up, or null to unpin.");
+    }
+    const before = this.readInterconnectivityOption(key, path);
+    const after = value;
+    return {
+      before,
+      after,
+      apply: async () => {
+        this.assertInterconnectivityPath(path);
+        if ((this.settings.pins[path]?.mode ?? null) !== before) {
+          throw new Error("The Pinup pin changed after the proposal was prepared.");
+        }
+        if (!this.explorer) throw new Error("Pinup is no longer available.");
+        await this.replacePins(after === null
+          ? removePin(this.settings.pins, path)
+          : setPin(this.settings.pins, path, after));
+      }
+    };
+  }
+
+  private assertInterconnectivityPath(path: string): void {
+    if (path.length > 1024 || this.app.vault.getAbstractFileByPath(path)?.path !== path) {
+      throw new Error("Choose an existing file or folder in this vault.");
+    }
   }
 
   private async toggle(path: string, mode: PinMode): Promise<void> {
