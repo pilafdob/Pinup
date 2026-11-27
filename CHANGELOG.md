@@ -2,6 +2,11 @@
 
 All notable changes to Pinup are documented in this file.
 
+## Unreleased
+
+- Stop deleting pins at start-up when their files are not indexed yet. On mobile with iCloud this wiped every pin and synced the empty list to other devices. Missing pins are now hidden until the file appears.
+- Add a "Remove pins for missing files and folders" command for clearing stale pins by hand.
+
 ## 1.0.5 - 2026-11-11
 
 - Expose a versioned API so compatible plugins can inspect and stage pin or pin-up changes for user approval.

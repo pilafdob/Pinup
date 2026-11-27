@@ -74,9 +74,13 @@ export default class PinupPlugin extends Plugin {
       const [reply] = data;
       if (isInterconnectivityReply(reply)) reply(this.interconnectivityApi);
     }));
-    this.app.workspace.onLayoutReady(() => {
-      void this.cleanMissingPins().then(() => this.explorer?.refreshAll());
-    });
+    // Never prune pins at start-up. On mobile and with iCloud or other file
+    // sync, files can be missing from the vault index for a while after the
+    // layout is ready; pruning then would save an empty pin list and sync it
+    // to every device. Missing pins are not rendered, and they reappear as
+    // soon as the file is indexed. Real deletions are handled by the delete
+    // event above; stale pins can be removed with a command.
+    this.app.workspace.onLayoutReady(() => this.explorer?.refreshAll());
   }
 
   onunload(): void {
@@ -118,6 +122,17 @@ export default class PinupPlugin extends Plugin {
       checkCallback: (checking) => {
         if (Object.keys(this.settings.pins).length === 0) return false;
         if (!checking) confirmClearPins(this.app, () => void this.clearPins());
+        return true;
+      }
+    });
+
+    this.addCommand({
+      id: "remove-missing-pins",
+      name: "Remove pins for missing files and folders",
+      checkCallback: (checking) => {
+        const next = this.withoutMissingPins();
+        if (next === this.settings.pins) return false;
+        if (!checking) void this.removeMissingPinsNow();
         return true;
       }
     });
@@ -242,11 +257,19 @@ export default class PinupPlugin extends Plugin {
     await this.saveSettingsAndRefresh();
   }
 
-  private async cleanMissingPins(): Promise<void> {
-    const next = removeMissingPins(
+  private withoutMissingPins(): PinupSettings["pins"] {
+    return removeMissingPins(
       this.settings.pins,
       (path) => this.app.vault.getAbstractFileByPath(path) !== null
     );
-    if (next !== this.settings.pins) await this.replacePins(next);
+  }
+
+  private async removeMissingPinsNow(): Promise<void> {
+    const before = Object.keys(this.settings.pins).length;
+    const next = this.withoutMissingPins();
+    if (next === this.settings.pins) return;
+    await this.replacePins(next);
+    const removed = before - Object.keys(next).length;
+    new Notice(`Pinup: removed ${removed} missing ${removed === 1 ? "pin" : "pins"}.`);
   }
 }
