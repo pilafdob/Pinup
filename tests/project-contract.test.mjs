@@ -44,6 +44,15 @@ test("registers every required command", () => {
   ]) assert.match(main, new RegExp(`\\"${id}\\"`));
 });
 
+test("never prunes missing pins automatically at start-up", () => {
+  const layoutReady = main.match(/onLayoutReady\(([\s\S]*?)\);\n/);
+  assert.ok(layoutReady, "onLayoutReady handler not found");
+  assert.doesNotMatch(layoutReady[1], /replacePins|MissingPins/);
+  assert.doesNotMatch(main, /cleanMissingPins/);
+  assert.match(main, /"remove-missing-pins"/);
+  assert.match(main, /removeMissingPinsNow/);
+});
+
 test("does not call vault content, rename, or move writers", () => {
   assert.doesNotMatch(main, /vault\.(?:modify|process|rename|trash|delete|create|createBinary)\s*\(/);
 });
